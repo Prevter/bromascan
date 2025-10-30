@@ -48,25 +48,33 @@ namespace genpat {
 
     Result<> Generator::savePatternFile() {
         nlohmann::json jsonData;
+        jsonData["platform"] = format_as(m_platformType);
         jsonData["classes"] = nlohmann::json::array();
 
         for (auto const& classBinding : m_classBindings) {
-            nlohmann::json jsonClass;
+            auto& jsonClass = jsonData["classes"].emplace_back();
             jsonClass["name"] = classBinding.name;
-            jsonClass["methods"] = nlohmann::json::array();
+            jsonClass["functions"] = nlohmann::json::array();
 
             for (auto const& methodBinding : classBinding.methods) {
-                nlohmann::json jsonMethod;
+                auto& jsonMethod = jsonClass["functions"].emplace_back();
+
                 jsonMethod["name"] = methodBinding.method.name;
+                jsonMethod["return"] = methodBinding.method.returnType;
+
+                jsonMethod["args"] = nlohmann::json::array();
+                for (auto const& arg : methodBinding.method.args) {
+                    auto& jsonArg = jsonMethod["args"].emplace_back();
+                    jsonArg["name"] = arg.name;
+                    jsonArg["type"] = arg.type;
+                }
+
                 if (methodBinding.pattern.has_value()) {
                     jsonMethod["pattern"] = methodBinding.pattern.value();
                 } else {
                     jsonMethod["pattern"] = nullptr;
                 }
-                jsonClass["methods"].push_back(jsonMethod);
             }
-
-            jsonData["classes"].push_back(jsonClass);
         }
 
         std::ofstream file(m_outputFile);
@@ -80,21 +88,6 @@ namespace genpat {
         }
 
         return Ok();
-    }
-
-    std::string_view format_as(Platform platform) {
-        switch (platform) {
-            case Platform::M1:
-                return "M1";
-            case Platform::IMAC:
-                return "iMac";
-            case Platform::WIN:
-                return "Windows";
-            case Platform::IOS:
-                return "iOS";
-            default:
-                return "Unknown";
-        }
     }
 
     Result<> Generator::generate() {

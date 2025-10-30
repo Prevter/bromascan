@@ -5,20 +5,12 @@
 #include <utility>
 #include <vector>
 
+#include <bromascan.hpp>
 #include <broma/Types.hpp>
 #include <Geode/Result.hpp>
 
 namespace genpat {
     using namespace geode;
-
-    enum class Platform {
-        M1,
-        IMAC,
-        WIN,
-        IOS
-    };
-
-    std::string_view format_as(Platform platform);
 
     class Generator {
     public:
