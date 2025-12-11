@@ -18,6 +18,7 @@ CPMAddPackage("gh:prevter/sinaps#2541d6d")
 CPMAddPackage("gh:jarro2783/cxxopts@3.3.1")
 CPMAddPackage("gh:geode-sdk/result@1.3.4")
 CPMAddPackage("gh:nlohmann/json@3.12.0")
+CPMAddPackage("gh:prevter/Broma#33898b2")
 
 # capstone for aarch64
 CPMAddPackage(
@@ -57,7 +58,7 @@ CPMAddPackage(
 file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS shared/*.cpp)
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC shared)
-target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt sinaps cxxopts GeodeResult nlohmann_json::nlohmann_json)
+target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt sinaps cxxopts GeodeResult nlohmann_json::nlohmann_json Broma)
 
 file(GLOB_RECURSE GENPAT_SOURCE_FILES CONFIGURE_DEPENDS genpat/*.cpp)
 add_executable(genpat ${GENPAT_SOURCE_FILES})

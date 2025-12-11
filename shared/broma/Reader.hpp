@@ -3,6 +3,6 @@
 #include <Geode/Result.hpp>
 #include "Types.hpp"
 
-namespace broma {
+namespace bromascan {
     geode::Result<std::vector<Class>> readCodegenData(std::filesystem::path const& path);
 }

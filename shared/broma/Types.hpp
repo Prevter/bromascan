@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-namespace broma {
+namespace bromascan {
     enum class AddressType {
         Null,
         Link,

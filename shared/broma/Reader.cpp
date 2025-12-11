@@ -4,7 +4,7 @@
 #include <fmt/std.h>
 #include <nlohmann/json.hpp>
 
-namespace broma {
+namespace bromascan {
     geode::Result<std::vector<Class>> readCodegenData(std::filesystem::path const& path) {
         std::ifstream file(path);
         if (!file.is_open()) {

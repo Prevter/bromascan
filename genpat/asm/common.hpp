@@ -57,8 +57,8 @@ namespace assembly {
             if (newTarget == index) {
                 // check if pattern is unique
                 auto nextIndex = sinaps::find(
-                    data.data() + offset + 1,
-                    data.size() - (offset + 1),
+                    data.data() + offset + Generator::IterSize,
+                    data.size() - (offset + Generator::IterSize),
                     outTokens,
                     Generator::IterSize
                 );
