@@ -31,7 +31,7 @@ namespace genpat {
         Result<> savePatternFile();
 
         struct MethodBinding {
-            broma::Function method;
+            bromascan::Function method;
             std::optional<std::string> pattern;
         };
 

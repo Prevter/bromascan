@@ -134,12 +134,12 @@ namespace genpat {
             );
         }
 
-        GEODE_UNWRAP_INTO(auto bindings, broma::readCodegenData(m_inputFile));
+        GEODE_UNWRAP_INTO(auto bindings, bromascan::readCodegenData(m_inputFile));
         if (m_verbose) {
             fmt::println("Read Broma codegen data: {} classes", bindings.size());
         }
 
-        static auto const getBinding = [](broma::Function const& method, Platform platform) -> broma::Address {
+        static auto const getBinding = [](bromascan::Function const& method, Platform platform) -> bromascan::Address {
             switch (platform) {
                 case Platform::M1:
                     return method.binding.macosArm;
@@ -150,7 +150,7 @@ namespace genpat {
                 case Platform::IOS:
                     return method.binding.ios;
                 default:
-                    return broma::Address{};
+                    return bromascan::Address{};
             }
         };
 
@@ -159,9 +159,9 @@ namespace genpat {
         for (auto& cls : bindings) {
             if (cls.methods.empty()) continue; // skip empty classes to save on thread
             m_totalMethods += std::ranges::count_if(cls.methods,
-                [&](broma::Function const& method) {
+                [&](bromascan::Function const& method) {
                     auto address = getBinding(method, m_platformType);
-                    return address.type == broma::AddressType::Offset;
+                    return address.type == bromascan::AddressType::Offset;
                 }
             );
 
@@ -172,7 +172,7 @@ namespace genpat {
 
                 for (auto const& method : cls.methods) {
                     auto address = getBinding(method, m_platformType);
-                    if (address.type != broma::AddressType::Offset) {
+                    if (address.type != bromascan::AddressType::Offset) {
                         continue;
                     }
 
