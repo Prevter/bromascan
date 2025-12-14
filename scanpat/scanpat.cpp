@@ -59,9 +59,11 @@ namespace scanpat {
         GEODE_UNWRAP(this->saveResults());
 
         // summary
-        fmt::println("Scan complete: {} methods found, {} methods not found",
+        fmt::println("Scan complete: {} methods found, {} methods not found ({:.2f}%)",
             m_successfulMethods.load(),
-            m_failedMethods.load()
+            m_failedMethods.load(),
+            (static_cast<double>(m_successfulMethods.load()) /
+             static_cast<double>(m_successfulMethods.load() + m_failedMethods.load())) * 100.0
         );
 
         return Ok();

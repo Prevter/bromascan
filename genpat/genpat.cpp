@@ -211,9 +211,10 @@ namespace genpat {
 
         pool.waitAll();
 
-        fmt::println("Pattern generation complete: {} / {} methods successful",
+        fmt::println("Pattern generation complete: {} / {} ({:.2f}%) methods successful",
             m_successfulMethods.load(),
-            m_totalMethods
+            m_totalMethods,
+            (static_cast<double>(m_successfulMethods.load()) / static_cast<double>(m_totalMethods)) * 100.0
         );
 
         GEODE_UNWRAP(this->savePatternFile());
