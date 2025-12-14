@@ -19,7 +19,6 @@ int main(int argc, char* argv[]) {
     options.add_options()
         ("v,verbose", "Enable verbose output")
         ("h,help", "Print help")
-        ("p,platform", "Target platform (auto, m1, imac, win, ios)", cxxopts::value<std::string>()->default_value("auto"))
         ("version", "Print version information")
         ("binary", "Binary File", cxxopts::value<std::string>())
         ("patterns", "Input Patterns File", cxxopts::value<std::string>())
@@ -43,13 +42,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    auto platform = result["platform"].as<std::string>();
     auto binaryFile = result["binary"].as<std::string>();
     auto patternsFile = result["patterns"].as<std::string>();
     auto outputFile = result["output"].as<std::string>();
     bool verbose = result.count("verbose") > 0;
     if (verbose) {
-        fmt::print("Platform: {}\n", platform);
         fmt::print("Binary File: {}\n", binaryFile);
         fmt::print("Patterns File: {}\n", patternsFile);
         fmt::print("Output File: {}\n", outputFile);
@@ -57,7 +54,6 @@ int main(int argc, char* argv[]) {
 
     auto start = std::chrono::high_resolution_clock::now();
     scanpat::Scanner scanner(
-        std::move(platform),
         std::move(binaryFile),
         std::move(patternsFile),
         std::move(outputFile),

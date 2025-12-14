@@ -14,7 +14,7 @@ endif()
 include(cmake/CPM.cmake)
 
 CPMAddPackage("gh:fmtlib/fmt#12.0.0")
-CPMAddPackage("gh:prevter/sinaps#2541d6d")
+CPMAddPackage("gh:prevter/sinaps#b9c3434")
 CPMAddPackage("gh:jarro2783/cxxopts@3.3.1")
 CPMAddPackage("gh:geode-sdk/result@1.3.4")
 CPMAddPackage("gh:nlohmann/json@3.12.0")

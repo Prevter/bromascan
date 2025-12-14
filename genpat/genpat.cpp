@@ -50,31 +50,8 @@ namespace genpat {
         nlohmann::json jsonData;
         jsonData["platform"] = format_as(m_platformType);
         jsonData["classes"] = nlohmann::json::array();
-
         for (auto const& classBinding : m_classBindings) {
-            auto& jsonClass = jsonData["classes"].emplace_back();
-            jsonClass["name"] = classBinding.name;
-            jsonClass["functions"] = nlohmann::json::array();
-
-            for (auto const& methodBinding : classBinding.methods) {
-                auto& jsonMethod = jsonClass["functions"].emplace_back();
-
-                jsonMethod["name"] = methodBinding.method.name;
-                jsonMethod["return"] = methodBinding.method.returnType;
-
-                jsonMethod["args"] = nlohmann::json::array();
-                for (auto const& arg : methodBinding.method.args) {
-                    auto& jsonArg = jsonMethod["args"].emplace_back();
-                    jsonArg["name"] = arg.name;
-                    jsonArg["type"] = arg.type;
-                }
-
-                if (methodBinding.pattern.has_value()) {
-                    jsonMethod["pattern"] = methodBinding.pattern.value();
-                } else {
-                    jsonMethod["pattern"] = nullptr;
-                }
-            }
+            jsonData["classes"].emplace_back(classBinding);
         }
 
         std::ofstream file(m_outputFile);
@@ -165,7 +142,7 @@ namespace genpat {
                 }
             );
 
-            pool.enqueue([this, cls = std::move(cls)]() {
+            pool.enqueue([this, cls = std::move(cls)]() mutable {
                 std::vector<sinaps::token_t> outTokens;
                 ClassBinding classBinding;
                 classBinding.name = std::move(cls.name);

@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include <sinaps.hpp>
+#include <ThreadPool.hpp>
 #include <binaries/Mach-O.hpp>
 #include <binaries/PE.hpp>
 #include <fmt/format.h>
@@ -15,9 +17,9 @@ namespace scanpat {
             fmt::println("Read binary file: {} ({} bytes)", m_binaryFile, m_binaryData.size());
         }
 
-        GEODE_UNWRAP_INTO(m_platformType, this->resolvePlatform());
+        GEODE_UNWRAP(this->readPatternsFile());
         if (m_verbose) {
-            fmt::println("Resolved platform: {}", m_platformType);
+            fmt::println("Target platform: {}", m_platformType);
         }
 
         switch (m_platformType) {
@@ -53,6 +55,8 @@ namespace scanpat {
             );
         }
 
+        GEODE_UNWRAP(this->performScan());
+
         return Ok();
     }
 
@@ -73,34 +77,110 @@ namespace scanpat {
         return Ok();
     }
 
-    Result<Platform> Scanner::resolvePlatform() {
-        if (m_platform == "auto") {
-            if (bin::pe::isPE64(m_binaryData)) {
-                return Ok(Platform::WIN);
-            }
+    Result<> Scanner::readPatternsFile() {
+        std::ifstream file(m_patternsFile);
+        if (!file.is_open()) {
+            return Err(fmt::format("Failed to open patterns file: {}", m_patternsFile));
+        }
 
-            if (bin::mach::isFatBinary(m_binaryData)) {
-                return Ok(Platform::M1); // leave intel mac as explicit option
-            }
+        auto jsonData = nlohmann::json::parse(file, nullptr, false);
+        if (jsonData.is_discarded()) {
+            return Err(fmt::format("Failed to parse patterns file: {}", m_patternsFile));
+        }
 
-            if (bin::mach::isMachO64(m_binaryData)) {
-                return Ok(Platform::IOS);
-            }
+        auto& classes = jsonData["classes"];
+        m_classBindings.reserve(classes.size());
 
-            return Err("Failed to auto-detect platform from binary");
+        try {
+            for (auto& jsonClass : classes) {
+                m_classBindings.emplace_back(jsonClass.get<ClassBinding>());
+            }
+        } catch (std::exception& e) {
+            return Err(fmt::format("Failed to deserialize patterns file: {}: {}", m_patternsFile, e.what()));
         }
-        if (m_platform == "m1") {
-            return Ok(Platform::M1);
+
+        if (m_verbose) {
+            fmt::println("Loaded {} class bindings from patterns file: {}",
+                m_classBindings.size(),
+                m_patternsFile
+            );
         }
-        if (m_platform == "imac") {
-            return Ok(Platform::IMAC);
+
+        auto platformStr = jsonData["platform"].get<std::string_view>();
+        if (platformStr == "Windows") {
+            m_platformType = Platform::WIN;
+        } else if (platformStr == "iMac") {
+            m_platformType = Platform::IMAC;
+        } else if (platformStr == "M1") {
+            m_platformType = Platform::M1;
+        } else if (platformStr == "iOS") {
+            m_platformType = Platform::IOS;
+        } else {
+            return Err(fmt::format("Unsupported platform in patterns file: {}", platformStr));
         }
-        if (m_platform == "win") {
-            return Ok(Platform::WIN);
+
+        return Ok();
+    }
+
+    Result<> Scanner::performScan() {
+        utils::ThreadPool pool{};
+
+        size_t stepSize = 4; // default align to 4 bytes
+        if (m_platformType == Platform::WIN || m_platformType == Platform::IMAC) {
+            stepSize = 16; // align to 16 bytes for x86_64
         }
-        if (m_platform == "ios") {
-            return Ok(Platform::IOS);
+
+        for (auto& classBinding : m_classBindings) {
+            if (classBinding.methods.empty()) continue; // skip empty classes to save on thread
+            pool.enqueue([this, &classBinding, stepSize]() {
+                for (auto& methodBinding : classBinding.methods) {
+                    if (!methodBinding.pattern.has_value()) {
+                        continue; // skip methods without patterns
+                    }
+
+                    auto& patternStr = methodBinding.pattern.value();
+                    fmt::println("Scanning for method: {}::{} with pattern: {}",
+                        classBinding.name,
+                        methodBinding.method.name,
+                        patternStr
+                    );
+
+                    auto patStr = sinaps::impl::tokenizePatternStringRuntime(patternStr);
+                    auto patStrNew = sinaps::to_string(patStr);
+                    if (patStrNew != patternStr) {
+                        fmt::println("Warning: Pattern string normalization changed:");
+                        fmt::println("  Original:   {}", patternStr);
+                        fmt::println("  Normalized: {}", patStrNew);
+                    }
+
+                    auto res = sinaps::find(
+                        m_targetSegment.data(),
+                        m_targetSegment.size(),
+                        patternStr,
+                        stepSize
+                    );
+
+                    if (res != sinaps::not_found) {
+                        auto address = res + m_baseCorrection;
+                        fmt::println("Found method: {}::{} at address: 0x{:X}",
+                            classBinding.name,
+                            methodBinding.method.name,
+                            address
+                        );
+                    } else {
+                        fmt::println("Method not found: {}::{}",
+                            classBinding.name,
+                            methodBinding.method.name
+                        );
+                    }
+
+                    break;
+                }
+            });
+            break;
         }
-        return Err(fmt::format("Unknown platform: {}", m_platform));
+
+        pool.waitAll();
+        return Ok();
     }
 }

@@ -30,16 +30,6 @@ namespace genpat {
         Result<Platform> resolvePlatform();
         Result<> savePatternFile();
 
-        struct MethodBinding {
-            bromascan::Function method;
-            std::optional<std::string> pattern;
-        };
-
-        struct ClassBinding {
-            std::string name;
-            std::vector<MethodBinding> methods;
-        };
-
     private:
         std::vector<uint8_t> m_binaryData;
         std::span<uint8_t const> m_targetSegment;
