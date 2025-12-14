@@ -17,6 +17,7 @@ std::string_view format_as(Platform platform);
 struct MethodBinding {
     bromascan::Function method;
     std::optional<std::string> pattern;
+    std::optional<uintptr_t> offset;
 };
 
 struct ClassBinding {

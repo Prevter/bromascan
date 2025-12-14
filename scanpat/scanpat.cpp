@@ -56,6 +56,13 @@ namespace scanpat {
         }
 
         GEODE_UNWRAP(this->performScan());
+        GEODE_UNWRAP(this->saveResults());
+
+        // summary
+        fmt::println("Scan complete: {} methods found, {} methods not found",
+            m_successfulMethods.load(),
+            m_failedMethods.load()
+        );
 
         return Ok();
     }
@@ -139,20 +146,6 @@ namespace scanpat {
                     }
 
                     auto& patternStr = methodBinding.pattern.value();
-                    fmt::println("Scanning for method: {}::{} with pattern: {}",
-                        classBinding.name,
-                        methodBinding.method.name,
-                        patternStr
-                    );
-
-                    auto patStr = sinaps::impl::tokenizePatternStringRuntime(patternStr);
-                    auto patStrNew = sinaps::to_string(patStr);
-                    if (patStrNew != patternStr) {
-                        fmt::println("Warning: Pattern string normalization changed:");
-                        fmt::println("  Original:   {}", patternStr);
-                        fmt::println("  Normalized: {}", patStrNew);
-                    }
-
                     auto res = sinaps::find(
                         m_targetSegment.data(),
                         m_targetSegment.size(),
@@ -162,25 +155,70 @@ namespace scanpat {
 
                     if (res != sinaps::not_found) {
                         auto address = res + m_baseCorrection;
-                        fmt::println("Found method: {}::{} at address: 0x{:X}",
-                            classBinding.name,
-                            methodBinding.method.name,
-                            address
-                        );
-                    } else {
-                        fmt::println("Method not found: {}::{}",
-                            classBinding.name,
-                            methodBinding.method.name
-                        );
-                    }
+                        methodBinding.offset = address;
+                        ++m_successfulMethods;
 
-                    break;
+                        if (m_verbose) {
+                            fmt::println("Found method: {}::{} at address: 0x{:X}",
+                                classBinding.name,
+                                methodBinding.method.name,
+                                address
+                            );
+                        }
+                    } else {
+                        ++m_failedMethods;
+                        if (m_verbose) {
+                            fmt::println("Pattern not found for method: {}::{}",
+                                classBinding.name,
+                                methodBinding.method.name
+                            );
+                        }
+                    }
                 }
             });
-            break;
         }
 
         pool.waitAll();
+        return Ok();
+    }
+
+    Result<> Scanner::saveResults() {
+        // remove all patterns and missing offsets from the results
+        std::vector<ClassBinding> filteredBindings;
+        filteredBindings.reserve(m_classBindings.size());
+
+        for (auto& classBinding : m_classBindings) {
+            ClassBinding filteredClass;
+            filteredClass.methods.reserve(classBinding.methods.size());
+            filteredClass.name = std::move(classBinding.name);
+
+            for (auto& methodBinding : classBinding.methods) {
+                if (methodBinding.offset.has_value()) {
+                    methodBinding.pattern = std::nullopt; // remove pattern to reduce output size
+                    filteredClass.methods.emplace_back(std::move(methodBinding));
+                }
+            }
+
+            if (!filteredClass.methods.empty()) {
+                filteredBindings.emplace_back(std::move(filteredClass));
+            }
+        }
+
+        nlohmann::json jsonData;
+        jsonData["platform"] = format_as(m_platformType);
+        jsonData["classes"] = filteredBindings;
+
+        std::ofstream file(m_outputFile);
+        if (!file.is_open()) {
+            return Err(fmt::format("Failed to open output file: {}", m_outputFile));
+        }
+
+        file << jsonData.dump(2);
+
+        if (m_verbose) {
+            fmt::println("Saved scan results to output file: {}", m_outputFile);
+        }
+
         return Ok();
     }
 }

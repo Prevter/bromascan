@@ -29,8 +29,10 @@ void to_json(nlohmann::json& j, MethodBinding const& mb) {
 
     if (mb.pattern.has_value()) {
         j["pattern"] = mb.pattern.value();
-    } else {
-        j["pattern"] = nullptr;
+    }
+
+    if (mb.offset.has_value()) {
+        j["offset"] = mb.offset.value();
     }
 }
 
@@ -49,6 +51,12 @@ void from_json(nlohmann::json const& j, MethodBinding& mb) {
         mb.pattern = j["pattern"].get<std::string>();
     } else {
         mb.pattern = std::nullopt;
+    }
+
+    if (j.contains("offset") && !j["offset"].is_null()) {
+        mb.offset = j["offset"].get<uintptr_t>();
+    } else {
+        mb.offset = std::nullopt;
     }
 }
 

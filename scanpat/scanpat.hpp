@@ -26,6 +26,7 @@ namespace scanpat {
         geode::Result<> readBinaryFile();
         geode::Result<> readPatternsFile();
         geode::Result<> performScan();
+        geode::Result<> saveResults();
 
     private:
         std::vector<uint8_t> m_binaryData;
@@ -34,6 +35,9 @@ namespace scanpat {
         std::mutex m_mutex;
         intptr_t m_baseCorrection = 0;
         Platform m_platformType = Platform::WIN;
+
+        std::atomic<size_t> m_successfulMethods = 0;
+        std::atomic<size_t> m_failedMethods = 0;
 
         std::string m_binaryFile;
         std::string m_patternsFile;
