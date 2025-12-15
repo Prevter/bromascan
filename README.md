@@ -1,18 +1,18 @@
 # bromascan
 
-bromascan helps update Broma bindings for new Geometry Dash builds without
-having to manually look for everything from scratch.
+bromascan helps move Broma bindings to new Geometry Dash builds without redoing
+every offset search by hand. The repo bundles a shared core plus three small CLIs:
 
-It comes with a shared core and two small tools:
-
-- **genpat** – makes pattern files from a known binary plus its bindings.
-- **scanpat** – runs those patterns on another build to recover the new offsets.
+- **genpat** – turn a known binary and its bindings into pattern files.
+- **scanpat** – run those patterns on another build to recover the updated addresses.
+- **broutil** – clean, format, and merge `.bro` files with scan results.
 
 ## Project Layout
 
 - `shared/` – common helpers (data types, serialization, threading).
 - `genpat/` – pattern generator CLI (`genpat/main.cpp`).
 - `scanpat/` – bulk pattern scanner (`scanpat/main.cpp`).
+- `broutil/` – `.bro` helper CLI (`broutil/main.cpp`).
 
 ## Requirements
 
@@ -35,23 +35,35 @@ Generate patterns:
 genpat GeometryDash.22074.mac CodegenData-22074.json Patterns.imac.22074.json -p imac
 ```
 
-> Note: only `imac` requires manual `-p imac` platform specification; others can
-> be auto-detected, so `-p` is optional
+> `-p imac` is only needed for that platform; other binaries auto-detect the
+> platform unless you override it with `-p/--platform`.
 
-Scan a fresh binary with those patterns:
+Scan another binary with those patterns:
 
 ```bash
 scanpat GeometryDash.22074.exe Patterns.Win.22074.json Output.Win.22074.json
 ```
 
-Add `--verbose` for extra logging. Use `--platform m1|imac|win|ios` (or `-p`) on `genpat` to override auto-detection.
+broutil helpers (pick one flag):
 
-You need bindings from https://github.com/geode-sdk/bindings (`.bro` definitions)
-and the matching CodegenData JSON from https://prevter.github.io/bindings-meta;
-both are required to merge bindings into a blank `.bro` for a newer game build.
+```bash
+broutil --clear input.bro cleaned.bro
+broutil --append base.bro Output.Win.22074.json merged.bro
+broutil --format messy.bro pretty.bro
+```
 
-You will also need the corresponding Geometry Dash binaries for every platform
-you plan to scan.
+Add `--verbose` to `genpat`/`scanpat` when you want extra logging.
+
+## Data Prep
+
+You need two matching resources for each game build:
+
+- https://github.com/geode-sdk/bindings for the `.bro` binding definitions.
+- https://prevter.github.io/bindings-meta for the `CodegenData-*.json` generated
+  from those definitions.
+
+Both files plus the target Geometry Dash binaries (one per platform you plan to
+scan) let you merge newer bindings back into a clean `.bro` with `broutil`.
 
 ## License
 

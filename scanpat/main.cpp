@@ -3,8 +3,6 @@
 #include <fmt/format.h>
 #include "scanpat.hpp"
 
-#include <broma/Writer.hpp>
-
 int main(int argc, char* argv[]) {
     cxxopts::Options options("scanpat", "Mass-scan function addresses using patterns");
     options.add_options()

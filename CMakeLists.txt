@@ -69,3 +69,8 @@ file(GLOB_RECURSE SCANPAT_SOURCE_FILES CONFIGURE_DEPENDS scanpat/*.cpp)
 add_executable(scanpat ${SCANPAT_SOURCE_FILES})
 target_link_libraries(scanpat PRIVATE ${PROJECT_NAME})
 target_compile_definitions(scanpat PRIVATE SCANPAT_VERSION="${PROJECT_VERSION}")
+
+file(GLOB_RECURSE BROUTIL_SOURCE_FILES CONFIGURE_DEPENDS broutil/*.cpp)
+add_executable(broutil ${BROUTIL_SOURCE_FILES})
+target_link_libraries(broutil PRIVATE ${PROJECT_NAME})
+target_compile_definitions(broutil PRIVATE BROUTIL_VERSION="${PROJECT_VERSION}")
