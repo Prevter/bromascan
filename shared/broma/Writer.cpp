@@ -319,10 +319,25 @@ namespace bromascan {
         return fmt::to_string(buf);
     }
 
-    Result<> writeBromaFile(std::filesystem::path const& path, std::span<broma::Class> classes) {
+    Result<> writeBromaFile(std::filesystem::path const& path, broma::Root const& root) {
         std::ofstream file(path);
         if (!file.is_open()) {
             return Err(fmt::format("Failed to open Broma output file: {}", path));
+        }
+
+        auto const& [classes, functions, headers] = root;
+
+        // write headers
+        for (auto& header : headers) {
+            if (header.platform == broma::Platform::All) {
+                fmt::println(file, "#import <{}>", header.name);
+            } else {
+                fmt::println(file, "#import {} <{}>", header.platform, header.name);
+            }
+        }
+
+        if (!headers.empty()) {
+            fmt::println(file, "");
         }
 
         // sort classes by name
@@ -647,6 +662,54 @@ namespace bromascan {
 
             // end of class
             fmt::println(file, "}}\n");
+        }
+
+        // free functions
+        for (auto& fn : functions) {
+            auto* method = &fn.prototype;
+
+            // blank line if has docs
+            if (!method->attributes.docs.empty()) {
+                fmt::println(file, "");
+            }
+
+            // attributes
+            auto attrs = formatAttributes(method->attributes, {});
+            if (!attrs.empty()) {
+                fmt::print(file, "{}", attrs);
+            }
+
+            fmt::print(file, "{} {}(", method->ret.name, method->name);
+
+            // args
+            bool shouldKeepDefaultNames = fn.inner.contains("p0");
+            for (size_t i = 0; i < method->args.size(); ++i) {
+                auto const& [argType, argName] = method->args[i];
+
+                // if argName follows `p0`, `p1`, etc., we can omit it
+                if (!shouldKeepDefaultNames && argName == fmt::format("p{}", i)) {
+                    fmt::print(file, "{}", argType.name);
+                } else {
+                    fmt::print(file, "{} {}", argType.name, argName);
+                }
+
+                if (i + 1 < method->args.size()) {
+                    fmt::print(file, ", ");
+                }
+            }
+
+            fmt::print(file, ")");
+
+            // bindings
+            auto bindStr = fmt::to_string(fn.binds);
+            fmt::print(file, "{}", bindStr);
+            if (!fn.inner.empty()) {
+                fmt::print(file, " {}", fn.inner);
+            } else {
+                fmt::print(file, ";");
+            }
+
+            fmt::print(file, "\n");
         }
 
         return Ok();

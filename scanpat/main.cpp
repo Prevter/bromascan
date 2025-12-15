@@ -6,15 +6,6 @@
 #include <broma/Writer.hpp>
 
 int main(int argc, char* argv[]) {
-    {
-        auto start = std::chrono::high_resolution_clock::now();
-        auto [classes, functions, _] = broma::parse_file("GeometryDash.bro");
-        (void) bromascan::writeBromaFile("test.bro", classes);
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        fmt::print("Broma parse and write completed in {} ms\n", duration);
-    }
-
     cxxopts::Options options("scanpat", "Mass-scan function addresses using patterns");
     options.add_options()
         ("v,verbose", "Enable verbose output")

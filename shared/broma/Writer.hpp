@@ -5,6 +5,6 @@
 namespace bromascan {
     geode::Result<> writeBromaFile(
         std::filesystem::path const& path,
-        std::span<broma::Class> classes
+        broma::Root const& root
     );
 }
